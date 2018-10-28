@@ -55,7 +55,7 @@ def svm_loss_naive(W, X, y, reg):
 
     # Add regularization to the loss.
     loss += reg * np.sum(W * W)
-    dW += reg * W
+    dW += 2 * reg * W
 
     #############################################################################
     # TODO:                                                                     #
@@ -78,12 +78,22 @@ def svm_loss_vectorized(W, X, y, reg):
     loss = 0.0
     dW = np.zeros(W.shape)  # initialize the gradient as zero
 
+    num_classes = W.shape[1]  # 10
+    num_train = X.shape[0]  # 500
+
     #############################################################################
     # TODO:                                                                     #
     # Implement a vectorized version of the structured SVM loss, storing the    #
     # result in loss.                                                           #
     #############################################################################
-    pass
+    scores = X.dot(W)
+    print(scores.shape)
+    right_class = scores[range(num_train), y]
+    right_class = np.array([right_class, ]*num_classes)
+    margin = np.maximum(0, scores - right_class.T + 1)
+    margin[range(num_train), y] = 0
+    loss = np.sum(margin)/num_train
+    loss += reg * np.sum(W * W)
     #############################################################################
     #                             END OF YOUR CODE                              #
     #############################################################################
@@ -97,7 +107,12 @@ def svm_loss_vectorized(W, X, y, reg):
     # to reuse some of the intermediate values that you used to compute the     #
     # loss.                                                                     #
     #############################################################################
-    pass
+    nonzero = margin.copy()
+    nonzero[nonzero != 0] = 1
+    nonzero[range(num_train), y] = -(np.sum(nonzero, axis=1))
+    dW = (X.T).dot(nonzero)
+    dW /= num_train
+    dW += 2 * reg*W
     #############################################################################
     #                             END OF YOUR CODE                              #
     #############################################################################
