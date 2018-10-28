@@ -86,13 +86,20 @@ def svm_loss_vectorized(W, X, y, reg):
     # Implement a vectorized version of the structured SVM loss, storing the    #
     # result in loss.                                                           #
     #############################################################################
-    scores = X.dot(W)
-    print(scores.shape)
-    right_class = scores[range(num_train), y]
-    right_class = np.array([right_class, ]*num_classes)
-    margin = np.maximum(0, scores - right_class.T + 1)
-    margin[range(num_train), y] = 0
-    loss = np.sum(margin)/num_train
+    scores_all = X.dot(W)
+
+    # scores_all.shape = (500, 10)
+    # y.shape = (500,)
+
+    scores_correct = scores_all[range(num_train), y]
+
+    # scores_correct.shape = (500,)
+    scores_correct = np.array([scores_correct, ]*num_classes)
+    # scores_correct.shape = (10, 500)
+    margin_all = np.maximum(0, scores_all - scores_correct.T + 1)
+    # margin_all.shape = (500, 10)
+    margin_all[range(num_train), y] = 0
+    loss = np.sum(margin_all)/num_train
     loss += reg * np.sum(W * W)
     #############################################################################
     #                             END OF YOUR CODE                              #
@@ -107,7 +114,7 @@ def svm_loss_vectorized(W, X, y, reg):
     # to reuse some of the intermediate values that you used to compute the     #
     # loss.                                                                     #
     #############################################################################
-    nonzero = margin.copy()
+    nonzero = margin_all.copy()
     nonzero[nonzero != 0] = 1
     nonzero[range(num_train), y] = -(np.sum(nonzero, axis=1))
     dW = (X.T).dot(nonzero)
