@@ -34,10 +34,11 @@ def svm_loss_naive(W, X, y, reg):
     loss = 0.0
     for i in xrange(num_train):
 
+        # Scores of current image
         scores = X[i].dot(W)
         correct_class_score = scores[y[i]]
 
-        # for every class
+        # For every class of this image
         for j in xrange(num_classes):
             if j == y[i]:
                 continue
@@ -77,14 +78,14 @@ def svm_loss_vectorized(W, X, y, reg):
     loss = 0.0
     dW = np.zeros(W.shape)  # initialize the gradient as zero
 
-    num_classes = W.shape[1]  # 10
-    num_train = X.shape[0]  # 500
-
     #############################################################################
     # TODO:                                                                     #
     # Implement a vectorized version of the structured SVM loss, storing the    #
     # result in loss.                                                           #
     #############################################################################
+
+    num_classes = W.shape[1]  # 10
+    num_train = X.shape[0]  # 500
 
     # y.shape = (500,)
 
@@ -98,10 +99,10 @@ def svm_loss_vectorized(W, X, y, reg):
     # A matrix containing num_train * num_classes elements
     # where scores of correct label stores in all columns
     # shape = (500, 10)
-    scores_correct = np.array([scores_correct, ] * num_classes).T
+    scores_correct_expand = np.array([scores_correct, ] * num_classes).T
 
     # Margin of all 500 images
-    margin_all = np.maximum(0, scores_all - scores_correct + 1)
+    margin_all = np.maximum(0, scores_all - scores_correct_expand + 1)
     # shape = (500, 10)
 
     # Margin of correct images won't be taken into account
