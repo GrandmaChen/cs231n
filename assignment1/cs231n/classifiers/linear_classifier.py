@@ -66,6 +66,7 @@ class LinearClassifier(object):
             # y numbers between range (0, x)
             # replace : to place the selected items back or not
 
+            # Extract a batch of images & their labels
             X_batch = X[mask]
             # shape = (200, 3073)
             y_batch = y[mask]
@@ -84,7 +85,7 @@ class LinearClassifier(object):
             # TODO:                                                                 #
             # Update the weights using the gradient and the learning rate.          #
             #########################################################################
-            self.W -= learning_rate * grad
+            self.W += - learning_rate * grad
             #########################################################################
             #                       END OF YOUR CODE                                #
             #########################################################################
@@ -113,7 +114,9 @@ class LinearClassifier(object):
         # TODO:                                                                   #
         # Implement this method. Store the predicted labels in y_pred.            #
         ###########################################################################
-        y_pred = np.argmax(X.dot(self.W), axis=1)
+        scores_all = X.dot(self.W)
+        # Select the one with largest score
+        y_pred = np.argmax(scores_all, axis=1)
         ###########################################################################
         #                           END OF YOUR CODE                              #
         ###########################################################################
