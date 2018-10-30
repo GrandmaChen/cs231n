@@ -37,6 +37,11 @@ class LinearClassifier(object):
             # lazily initialize W
             self.W = 0.001 * np.random.randn(dim, num_classes)
 
+        # X.shape = (49000, 3703)
+        # y.shape = (49000,)
+        # num_train = 49000
+        # dim = 3073
+
         # Run stochastic gradient descent to optimize W
         loss_history = []
         for it in xrange(num_iters):
@@ -54,7 +59,18 @@ class LinearClassifier(object):
             # Hint: Use np.random.choice to generate indices. Sampling with         #
             # replacement is faster than sampling without replacement.              #
             #########################################################################
-            pass
+
+            # Get batch_size of random images
+            mask = np.random.choice(num_train, batch_size, replace=True)
+            # np.random.choice(x, y) : generates a numpy.ndarray containing
+            # y numbers between range (0, x)
+            # replace : to place the selected items back or not
+
+            X_batch = X[mask]
+            # shape = (200, 3073)
+            y_batch = y[mask]
+            # shape = (200,)
+
             #########################################################################
             #                       END OF YOUR CODE                                #
             #########################################################################
@@ -68,7 +84,7 @@ class LinearClassifier(object):
             # TODO:                                                                 #
             # Update the weights using the gradient and the learning rate.          #
             #########################################################################
-            pass
+            self.W -= learning_rate * grad
             #########################################################################
             #                       END OF YOUR CODE                                #
             #########################################################################
@@ -97,7 +113,7 @@ class LinearClassifier(object):
         # TODO:                                                                   #
         # Implement this method. Store the predicted labels in y_pred.            #
         ###########################################################################
-        pass
+        y_pred = np.argmax(X.dot(self.W), axis=1)
         ###########################################################################
         #                           END OF YOUR CODE                              #
         ###########################################################################

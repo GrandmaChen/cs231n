@@ -126,15 +126,15 @@ def svm_loss_vectorized(W, X, y, reg):
     #############################################################################
 
     # A copy of margin where incorrect item = 1 (images to be multiplied by)
-    nonzero = margin_all.copy()
-    nonzero[nonzero != 0] = 1
+    gradient_all = margin_all.copy()
+    gradient_all[gradient_all != 0] = 1
     # shape = (500, 10)
 
     # Correct item -> -1 * sum of incorrect items (images to be multibplied by)
-    nonzero[range(num_train), y] = -(np.sum(nonzero, axis=1))
+    gradient_all[range(num_train), y] = -(np.sum(gradient_all, axis=1))
 
     # Multiply
-    dW = (X.T).dot(nonzero)
+    dW = (X.T).dot(gradient_all)
     dW /= num_train
     dW += 2 * reg * W
 
