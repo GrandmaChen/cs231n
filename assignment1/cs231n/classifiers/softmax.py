@@ -107,18 +107,21 @@ def softmax_loss_vectorized(W, X, y, reg):
 
     # sum(axis=1) means the sum of all items (e to the power of Sj)
     # within this image
-    # shape(500,) = shape(500,) / shape(500,)
-    before_log = np.exp(scores_correct) / np.exp(scores_all).sum(axis=1)
-    margin_all = -np.log(before_log)
+    # shape(500,)
+    margin_all = -np.log(np.exp(scores_correct) /
+                         np.exp(scores_all).sum(axis=1))
 
     loss = margin_all.mean() + reg * np.sum(W * W)
 
     # Gradient
-    gradient_all = before_log.copy()
-    gradient_all[range(num_train), y] = np.exp(
-        scores_correct) / (np.exp(scores_all).sum(axis=1) - 1)
+    # axis=1 to keep rows
+    sums_of_each_row = np.exp(scores_all).sum(axis=1, keepdims=True)
 
-    dW = (X.T).dot(gradient_all)
+    factors = np.exp(scores_all) / sums_of_each_row
+    factors[range(num_train), y] -= 1
+
+    # Multiply
+    dW = (X.T).dot(factors)
     dW /= num_train
     dW += 2 * reg * W
 
