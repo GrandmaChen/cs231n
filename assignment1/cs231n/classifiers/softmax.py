@@ -45,27 +45,24 @@ def softmax_loss_naive(W, X, y, reg):
 
         # Normalization trick to avoid numerical instability
         # http://cs231n.github.io/linear-classify/#softmax
-        scores -= np.max(scores)
-
-        e_to_the_power_of_scores = np.exp(scores)  # shape = 10
+        scores -= scores.max()
 
         correct_class_score = scores[y[i]]
 
         # Sum up loss over all examples
-        loss += -np.log(np.exp(correct_class_score) /
-                        e_to_the_power_of_scores.sum())
+        loss += -np.log(np.exp(correct_class_score) / np.exp(scores).sum())
 
         # Get the gradient of W
         # https://blog.csdn.net/pjia_1008/article/details/66972060
         # Gradient of all correct items
         dW[:, y[i]] += ((np.exp(correct_class_score) /
-                         e_to_the_power_of_scores.sum()) - 1) * X[i]
+                         np.exp(scores).sum()) - 1) * X[i]
 
         # Gradient of each incorrect item
         for j in xrange(num_classes):
             if j != y[i]:
                 dW[:, j] += (np.exp(scores[j]) /
-                             e_to_the_power_of_scores.sum()) * X[i]
+                             np.exp(scores).sum()) * X[i]
 
     loss /= num_train
     loss += reg * np.sum(W * W)
@@ -97,12 +94,33 @@ def softmax_loss_vectorized(W, X, y, reg):
     # regularization!                                                           #
     #############################################################################
 
+    # np.set_printoptions(threshold=np.nan)
+
     num_classes = W.shape[1]  # 10
     num_train = X.shape[0]  # 500
 
+    # Loss
     scores_all = X.dot(W)  # shape = (500, 10)
+    scores_all -= scores_all.max()
 
-    scores_correct = scores_all[range(num_train), y]
+    scores_correct = scores_all[range(num_train), y]  # shape = (500,)
+
+    # sum(axis=1) means the sum of all items (e to the power of Sj)
+    # within this image
+    # shape(500,) = shape(500,) / shape(500,)
+    before_log = np.exp(scores_correct) / np.exp(scores_all).sum(axis=1)
+    margin_all = -np.log(before_log)
+
+    loss = margin_all.mean() + reg * np.sum(W * W)
+
+    # Gradient
+    gradient_all = before_log.copy()
+    gradient_all[range(num_train), y] = np.exp(
+        scores_correct) / (np.exp(scores_all).sum(axis=1) - 1)
+
+    dW = (X.T).dot(gradient_all)
+    dW /= num_train
+    dW += 2 * reg * W
 
     #############################################################################
     #                          END OF YOUR CODE                                 #

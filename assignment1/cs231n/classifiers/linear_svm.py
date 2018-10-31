@@ -108,9 +108,8 @@ def svm_loss_vectorized(W, X, y, reg):
     # Margin of correct images won't be taken into account
     margin_all[range(num_train), y] = 0
 
-    # Sum up all margin & add regularization
-    loss = np.sum(margin_all) / num_train
-    loss += reg * np.sum(W * W)
+    # Calculate the mean & add regularization
+    loss = margin_all.mean() + reg * np.sum(W * W)
 
     #############################################################################
     #                             END OF YOUR CODE                              #
