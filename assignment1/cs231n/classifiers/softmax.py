@@ -94,9 +94,6 @@ def softmax_loss_vectorized(W, X, y, reg):
     # regularization!                                                           #
     #############################################################################
 
-    # np.set_printoptions(threshold=np.nan)
-
-    num_classes = W.shape[1]  # 10
     num_train = X.shape[0]  # 500
 
     # Loss
@@ -121,7 +118,7 @@ def softmax_loss_vectorized(W, X, y, reg):
     factors[range(num_train), y] -= 1
 
     # Multiply
-    dW = (X.T).dot(factors)
+    dW = X.T.dot(factors)
     dW /= num_train
     dW += 2 * reg * W
 
