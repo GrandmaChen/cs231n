@@ -83,8 +83,8 @@ class TwoLayerNet(object):
         #############################################################################
 
         # ReLU
-        hidden_layer = np.maximum(0, X.dot(W1) + b1)
-        scores = hidden_layer.dot(W2) + b2
+        scores_hidden_layer = np.maximum(0, X.dot(W1) + b1)
+        scores = scores_hidden_layer.dot(W2) + b2
 
         #############################################################################
         #                              END OF YOUR CODE                             #
@@ -121,37 +121,54 @@ class TwoLayerNet(object):
         #############################################################################
 
         # Layer 2
-        sums_of_each_row = np.exp(scores).sum(axis=1, keepdims=True)
+        vertical_sum_of_e_to_fj = np.exp(scores).sum(axis=1, keepdims=True)
 
-        factors = np.exp(scores) / sums_of_each_row
-        factors[range(N), y] -= 1
+        W2_factors = np.exp(scores) / vertical_sum_of_e_to_fj
+        W2_factors[range(N), y] -= 1
 
-        dW2 = hidden_layer.T.dot(factors)  # shape = (10, 3)
+        dW2 = scores_hidden_layer.T.dot(W2_factors)  # shape = (10, 3)
         dW2 /= N
         dW2 += 2 * reg * W2
 
+        grads['W2'] = dW2
+        grads['b2'] = np.sum(W2_factors / N, axis=0)  # Why
+
         # Layer 1
-        dW1 = X.T.dot(hidden_layer)
+        print(W2_factors.shape)  # (5, 3)
+        print(W2_factors.T.shape)  # (3, 5)
+        a = W2_factors.T.dot(W2_factors)
+        print(a)
+        W1_factors = W2_factors.dot(W2.T)  # Why????????????????????????
+        print(W2_factors.shape)  # (5, 3)
+        print(W2.shape)  # (10, 3)
+        print(W2.T.shape)  # (3,10)
+        W1_factors[scores_hidden_layer <= 0] = 0  # ??????
+        dW1 = X.T.dot(W1_factors)
         dW1 /= N
         dW1 += 2 * reg * W1
-
-        grads['W2'] = dW2
         grads['W1'] = dW1
+        grads['b1'] = np.sum(W1_factors / N, axis=0)  # Why
 
-        # softmax = np.exp(scores) / np.sum(np.exp(scores), axis=1)[:, None]
-        # dscores = softmax
+        # ----------------------------------------------------------------
+
+        # dscores = np.exp(scores) / np.sum(np.exp(scores), axis=1)[:, None]
         # dscores[range(N), y] -= 1
         # dscores /= N
 
-        # grads['W2'] = hidden_layer.T.dot(dscores)
-        # grads['b2'] = np.sum(dscores, axis=0)
-        # grads['W2'] += reg*W2*2
+        # # grads['W2'] = hidden_layer.T.dot(dscores)
+        # # grads['b2'] = np.sum(dscores, axis=0)
+        # # grads['W2'] += reg*W2*2
 
-        # print(dW[0][0])
-        # print(grads['W2'][0][0])
+        # dhidden = dscores.dot(W2.T)
 
-        # dhidden = np.dot(dscores, W2.T)
-        # dhidden[hidden_layer <= 0] = 0
+        # print('dW2')
+        # print(dW2)
+        # print('dscores')
+        #print(scores_hidden_layer.T.dot(dscores) + reg*W2*2)
+
+        # print(factors2)
+        # print(dhidden)
+        # dhidden[scores_hidden_layer <= 0] = 0
 
         # grads['W1'] = np.dot(X.T, dhidden)
         # grads['b1'] = np.sum(dhidden, axis=0)
