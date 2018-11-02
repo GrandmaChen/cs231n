@@ -61,15 +61,16 @@ class LinearClassifier(object):
             #########################################################################
 
             # Get batch_size of random images
-            mask = np.random.choice(num_train, batch_size, replace=True)
+            batch_range = np.random.choice(
+                num_train, batch_size, replace=True)
             # np.random.choice(x, y) : generates a numpy.ndarray containing
             # y numbers between range (0, x)
             # replace : to place the selected items back or not
 
             # Extract a batch of images & their labels
-            X_batch = X[mask]
+            X_batch = X[batch_range]
             # shape = (200, 3073)
-            y_batch = y[mask]
+            y_batch = y[batch_range]
             # shape = (200,)
 
             #########################################################################
