@@ -82,6 +82,11 @@ class TwoLayerNet(object):
         # shape (N, C).                                                             #
         #############################################################################
 
+        # print(X.shape)
+        # print(W1.shape)
+        # print(b1.shape)
+        # print(W2.shape)
+        # print(b2.shape)
         # ReLU
         scores_hidden_layer = np.maximum(0, X.dot(W1) + b1)
         scores = scores_hidden_layer.dot(W2) + b2
@@ -215,10 +220,9 @@ class TwoLayerNet(object):
             # using stochastic gradient descent. You'll need to use the gradients   #
             # stored in the grads dictionary defined above.                         #
             #########################################################################
-            self.params['W1'] += -learning_rate * grads['W1']
-            self.params['b1'] += -learning_rate * grads['b1']
-            self.params['W2'] += -learning_rate * grads['W2']
-            self.params['b2'] += -learning_rate * grads['b2']
+            for param in self.params:
+                self.params[param] += -grads[param] * \
+                    learning_rate * learning_rate_decay
             #########################################################################
             #                             END OF YOUR CODE                          #
             #########################################################################
@@ -263,7 +267,7 @@ class TwoLayerNet(object):
         ###########################################################################
         # TODO: Implement this function; it should be VERY simple!                #
         ###########################################################################
-        y_pred = np.argmax(self.loss(X), axis=0)
+        y_pred = np.argmax(self.loss(X), axis=1)
         ###########################################################################
         #                              END OF YOUR CODE                           #
         ###########################################################################
