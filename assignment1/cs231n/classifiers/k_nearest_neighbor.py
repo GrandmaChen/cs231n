@@ -97,7 +97,7 @@ class KNearestNeighbor(object):
             # Compute the l2 distance between the ith test point and all training #
             # points, and store the result in dists[i, :].                        #
             #######################################################################
-            dists[i] = np.sqrt(((X[i]-self.X_train)**2).sum(axis=1))
+            dists[i] = np.sqrt(((self.X_train-X[i])**2).sum(axis=1))
             #######################################################################
             #                         END OF YOUR CODE                            #
             #######################################################################
