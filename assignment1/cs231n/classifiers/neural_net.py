@@ -82,11 +82,6 @@ class TwoLayerNet(object):
         # shape (N, C).                                                             #
         #############################################################################
 
-        # print(X.shape)
-        # print(W1.shape)
-        # print(b1.shape)
-        # print(W2.shape)
-        # print(b2.shape)
         # ReLU
         scores_hidden_layer = np.maximum(0, X.dot(W1) + b1)
         scores = scores_hidden_layer.dot(W2) + b2
@@ -136,7 +131,7 @@ class TwoLayerNet(object):
 
         grads['W2'] = dW2
         # Average bias for every class so far
-        grads['b2'] = np.mean(dW2_factors, axis=0)
+        grads['b2'] = dW2_factors.mean(axis=0)
 
         # --------------------------------------------------------------------------
 
@@ -156,7 +151,7 @@ class TwoLayerNet(object):
         dW1 += 2 * reg * W1
         grads['W1'] = dW1
         # Average bias for every class so far
-        grads['b1'] = np.mean(dW1_factors_before_ReLU, axis=0)
+        grads['b1'] = dW1_factors_before_ReLU.mean(axis=0)
 
         #############################################################################
         #                              END OF YOUR CODE                             #

@@ -47,11 +47,18 @@ class TwoLayerNet(object):
         # weights and biases using the keys 'W1' and 'b1' and second layer weights #
         # and biases using the keys 'W2' and 'b2'.                                 #
         ############################################################################
-        pass
+
+        self.params['W1'] = weight_scale * \
+            np.random.randn(input_dim, hidden_dim)
+        self.params['b1'] = np.zeros(hidden_dim)
+
+        self.params['W2'] = weight_scale * \
+            np.random.randn(hidden_dim, num_classes)
+        self.params['b2'] = np.zeros(num_classes)
+
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
-
 
     def loss(self, X, y=None):
         """
@@ -77,7 +84,17 @@ class TwoLayerNet(object):
         # TODO: Implement the forward pass for the two-layer net, computing the    #
         # class scores for X and storing them in the scores variable.              #
         ############################################################################
-        pass
+
+        # Reshape the image data into rows
+        X_rows = X.reshape(X.shape[0], -1)
+
+        # Get parameters
+        W1, b1, W2, b2 = self.params['W1'], self.params['b1'], self.params['W2'], self.params['b2']
+        N, D = X_rows.shape
+
+        scores_hidden_layer = np.maximum(0, X_rows.dot(W1) + b1)
+        scores = scores_hidden_layer.dot(W2) + b2
+
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -97,7 +114,35 @@ class TwoLayerNet(object):
         # automated tests, make sure that your L2 regularization includes a factor #
         # of 0.5 to simplify the expression for the gradient.                      #
         ############################################################################
-        pass
+
+        vertical_sum_of_e_to_fj = np.exp(scores).sum(axis=1, keepdims=True)
+
+        dW2_factors = np.exp(scores) / vertical_sum_of_e_to_fj
+        dW2_factors[range(N), y] -= 1
+
+        dW2 = scores_hidden_layer.T.dot(dW2_factors)
+        dW2 /= N
+        dW2 += self.reg * W2
+
+        grads['W2'] = dW2
+        grads['b2'] = dW2_factors.mean(axis=0)
+
+        # --------------------------------------------------------------------------
+
+        dW1_factors_after_ReLU = dW2_factors.dot(W2.T)
+
+        dW1_factors_before_ReLU = dW1_factors_after_ReLU.copy()
+        dW1_factors_before_ReLU[scores_hidden_layer <= 0] *= 0
+        dW1_factors_before_ReLU[scores_hidden_layer > 0] *= 1
+
+        # ---------------------------------------------------------------------------
+
+        dW1 = X.T.dot(dW1_factors_before_ReLU)
+        dW1 /= N
+        dW1 += self.reg * W1
+        grads['W1'] = dW1
+        grads['b1'] = dW1_factors_before_ReLU.mean(axis=0)
+
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -184,12 +229,12 @@ class FullyConnectedNet(object):
         # pass of the second batch normalization layer, etc.
         self.bn_params = []
         if self.use_batchnorm:
-            self.bn_params = [{'mode': 'train'} for i in range(self.num_layers - 1)]
+            self.bn_params = [{'mode': 'train'}
+                              for i in range(self.num_layers - 1)]
 
         # Cast all parameters to the correct datatype
         for k, v in self.params.items():
             self.params[k] = v.astype(dtype)
-
 
     def loss(self, X, y=None):
         """
