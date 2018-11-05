@@ -92,6 +92,7 @@ class TwoLayerNet(object):
         W1, b1, W2, b2 = self.params['W1'], self.params['b1'], self.params['W2'], self.params['b2']
         N, D = X_rows.shape
 
+        # Calculate scores
         scores_hidden_layer = np.maximum(0, X_rows.dot(W1) + b1)
         scores = scores_hidden_layer.dot(W2) + b2
 
@@ -114,6 +115,15 @@ class TwoLayerNet(object):
         # automated tests, make sure that your L2 regularization includes a factor #
         # of 0.5 to simplify the expression for the gradient.                      #
         ############################################################################
+
+        scores_correct = scores[range(N), y]
+
+        margin = -np.log(np.exp(scores_correct) / np.exp(scores).sum(axis=1))
+        print('reg')
+        print(self.reg)
+        loss = margin.mean() + self.reg * np.sum(W1 * W1) + self.reg * np.sum(W2 * W2)
+
+        # --------------------------------------------------------------------------
 
         vertical_sum_of_e_to_fj = np.exp(scores).sum(axis=1, keepdims=True)
 
