@@ -86,15 +86,22 @@ class TwoLayerNet(object):
         ############################################################################
 
         # Reshape the image data into rows
-        X_rows = X.reshape(X.shape[0], -1)
+        #X_rows = X.reshape(X.shape[0], -1)
 
         # Get parameters
-        W1, b1, W2, b2 = self.params['W1'], self.params['b1'], self.params['W2'], self.params['b2']
-        N, D = X_rows.shape
+        #W1, b1, W2, b2 = self.params['W1'], self.params['b1'], self.params['W2'], self.params['b2']
+        #N = X_rows.shape[0]
 
         # Calculate scores
-        scores_hidden_layer = np.maximum(0, X_rows.dot(W1) + b1)
-        scores = scores_hidden_layer.dot(W2) + b2
+        #scores_hidden_layer = np.maximum(0, X_rows.dot(W1) + b1)
+        #scores = scores_hidden_layer.dot(W2) + b2
+
+        W1, b1, W2, b2 = self.params['W1'], self.params['b1'], self.params['W2'], self.params['b2']
+        reg = self.reg
+
+        # Use functions from layer_utils.py
+        out, cache1 = affine_relu_forward(X, W1, b1)
+        scores, cache2 = affine_forward(out, W2, b2)
 
         ############################################################################
         #                             END OF YOUR CODE                             #
@@ -116,42 +123,54 @@ class TwoLayerNet(object):
         # of 0.5 to simplify the expression for the gradient.                      #
         ############################################################################
 
-        scores_correct = scores[range(N), y]
+        # scores_correct = scores[range(N), y]
 
-        margin = -np.log(np.exp(scores_correct) / np.exp(scores).sum(axis=1))
-        print('reg')
-        print(self.reg)
-        loss = margin.mean() + self.reg * np.sum(W1 * W1) + self.reg * np.sum(W2 * W2)
+        # margin = -np.log(np.exp(scores_correct) / np.exp(scores).sum(axis=1))
+        # loss = margin.mean() + 0.5 * self.reg * np.sum(W1 * W1) + \
+        #     0.5 * self.reg * np.sum(W2 * W2)
 
-        # --------------------------------------------------------------------------
+        # # --------------------------------------------------------------------------
 
-        vertical_sum_of_e_to_fj = np.exp(scores).sum(axis=1, keepdims=True)
+        # vertical_sum_of_e_to_fj = np.exp(scores).sum(axis=1, keepdims=True)
 
-        dW2_factors = np.exp(scores) / vertical_sum_of_e_to_fj
-        dW2_factors[range(N), y] -= 1
+        # dW2_factors = np.exp(scores) / vertical_sum_of_e_to_fj
+        # dW2_factors[range(N), y] -= 1
 
-        dW2 = scores_hidden_layer.T.dot(dW2_factors)
-        dW2 /= N
-        dW2 += self.reg * W2
+        # dW2 = scores_hidden_layer.T.dot(dW2_factors)
+        # dW2 /= N
+        # dW2 += self.reg * W2
 
-        grads['W2'] = dW2
-        grads['b2'] = dW2_factors.mean(axis=0)
+        # grads['W2'] = dW2
+        # grads['b2'] = dW2_factors.mean(axis=0)
 
-        # --------------------------------------------------------------------------
+        # # --------------------------------------------------------------------------
 
-        dW1_factors_after_ReLU = dW2_factors.dot(W2.T)
+        # dW1_factors_after_ReLU = dW2_factors.dot(W2.T)
 
-        dW1_factors_before_ReLU = dW1_factors_after_ReLU.copy()
-        dW1_factors_before_ReLU[scores_hidden_layer <= 0] *= 0
-        dW1_factors_before_ReLU[scores_hidden_layer > 0] *= 1
+        # dW1_factors_before_ReLU = dW1_factors_after_ReLU.copy()
+        # dW1_factors_before_ReLU[scores_hidden_layer <= 0] *= 0
+        # dW1_factors_before_ReLU[scores_hidden_layer > 0] *= 1
 
-        # ---------------------------------------------------------------------------
+        # # ---------------------------------------------------------------------------
 
-        dW1 = X.T.dot(dW1_factors_before_ReLU)
-        dW1 /= N
-        dW1 += self.reg * W1
-        grads['W1'] = dW1
-        grads['b1'] = dW1_factors_before_ReLU.mean(axis=0)
+        # dW1 = X.T.dot(dW1_factors_before_ReLU)
+        # dW1 /= N
+        # dW1 += self.reg * W1
+        # grads['W1'] = dW1
+        # grads['b1'] = dW1_factors_before_ReLU.mean(axis=0)
+
+        # Use functions from layers.py
+        loss, dout = softmax_loss(scores, y)
+        loss += 0.5 * reg * np.sum(W1 * W1) + 0.5 * reg * np.sum(W2 * W2)
+
+        dx2, dw2, db2 = affine_backward(dout, cache2)
+
+        grads['W2'] = dw2 + reg * W2
+        grads['b2'] = db2
+
+        dx1, dw1, db1 = affine_relu_backward(dx2, cache1)
+        grads['W1'] = dw1 + reg * W1
+        grads['b1'] = db1
 
         ############################################################################
         #                             END OF YOUR CODE                             #
