@@ -259,6 +259,11 @@ class FullyConnectedNet(object):
                     np.random.randn(curr_layer, next_layer)
                 self.params['b' + idx] = np.zeros(next_layer)
 
+                # batchnorm part
+                if use_batchnorm:
+                    self.params['gamma' + idx] = np.ones((1, 1))
+                    self.params['beta' + idx] = np.zeros((1, 1))
+
                 # if not end
                 if idx_hidden_layer != (len(hidden_dims) - 1):
 
@@ -300,6 +305,22 @@ class FullyConnectedNet(object):
         for k, v in self.params.items():
             self.params[k] = v.astype(dtype)
 
+     # Self-defined function
+    def affine_batchnorm_forward(self, x, w, b, gamma, beta, bn_param):
+        a, fc_cache = affine_forward(x, w, b)
+        c, batch_cache = batchnorm_forward(a, gamma, beta, bn_param)
+        out, relu_cache = relu_forward(c)
+        cache = (fc_cache, batch_cache, relu_cache)
+        return out, cache
+
+    # Self-defined function
+    def affine_batchnorm_backward(self, dout, cache):
+        fc_cache, batch_cache, relu_cache = cache
+        da = relu_backward(dout, relu_cache)
+        dc, dgamma, dbeta = batchnorm_backward_alt(da, batch_cache)
+        dx, dw, db = affine_backward(dc, fc_cache)
+        return dx, dw, db, np.sum(dgamma), np.sum(dbeta)
+
     def loss(self, X, y=None):
         """
         Compute loss and gradient for the fully-connected net.
@@ -337,10 +358,21 @@ class FullyConnectedNet(object):
 
         for idx_layer in range(self.num_layers):
 
-            w = params['W' + str(idx_layer + 1)]
-            b = params['b' + str(idx_layer + 1)]
+            idx = str(idx_layer + 1)
 
-            scores, cache = affine_forward(scores, w, b)
+            w = params['W' + idx]
+            b = params['b' + idx]
+
+            if self.use_batchnorm:
+
+                gamma = self.params['gamma' + idx]
+                beta = self.params['beta' + idx]
+                bn_param = self.params[idx_layer]
+
+                scores, cache = self.affine_batchnorm_forward(
+                    scores, w, b, gamma, beta, bn_param)
+            else:
+                scores, cache = affine_forward(scores, w, b)
             cache_list.append(cache)
 
         ############################################################################
