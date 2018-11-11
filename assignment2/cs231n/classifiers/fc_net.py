@@ -373,6 +373,7 @@ class FullyConnectedNet(object):
                     scores, w, b, gamma, beta, bn_param)
             else:
                 scores, cache = affine_forward(scores, w, b)
+
             cache_list.append(cache)
 
         ############################################################################
@@ -417,7 +418,11 @@ class FullyConnectedNet(object):
             idx = str(idx_layer + 1)
             w = params['W' + idx]
 
-            dx, dw, db = affine_backward(dx, cache_list[idx_layer])
+            if self.use_batchnorm:
+                dx, dw, db, dgamma, dbeta = self.affine_batchnorm_backward(
+                    dout, cache)
+            else:
+                dx, dw, db = affine_backward(dx, cache_list[idx_layer])
             grads['W' + idx] = dw + reg * w
             grads['b' + idx] = db
 
