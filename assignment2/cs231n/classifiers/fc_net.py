@@ -274,6 +274,7 @@ class FullyConnectedNet(object):
             last_idx = str(self.num_layers)
             last_dim = hidden_dims[-1]
 
+            # An extra layer
             self.params['W' + last_idx] = weight_scale * \
                 np.random.randn(last_dim, last_dim)
             self.params['b' + last_idx] = np.zeros(last_dim)
@@ -305,7 +306,7 @@ class FullyConnectedNet(object):
         for k, v in self.params.items():
             self.params[k] = v.astype(dtype)
 
-     # Self-defined function
+    # Self defined functions============================================
     def affine_batchnorm_forward(self, x, w, b, gamma, beta, bn_param):
         a, fc_cache = affine_forward(x, w, b)
         c, batch_cache = batchnorm_forward(a, gamma, beta, bn_param)
@@ -313,13 +314,14 @@ class FullyConnectedNet(object):
         cache = (fc_cache, batch_cache, relu_cache)
         return out, cache
 
-    # Self-defined function
     def affine_batchnorm_backward(self, dout, cache):
         fc_cache, batch_cache, relu_cache = cache
         da = relu_backward(dout, relu_cache)
         dc, dgamma, dbeta = batchnorm_backward_alt(da, batch_cache)
         dx, dw, db = affine_backward(dc, fc_cache)
         return dx, dw, db, np.sum(dgamma), np.sum(dbeta)
+
+    # Self defined functions============================================
 
     def loss(self, X, y=None):
         """
@@ -363,16 +365,21 @@ class FullyConnectedNet(object):
             w = params['W' + idx]
             b = params['b' + idx]
 
-            if self.use_batchnorm:
-
-                gamma = self.params['gamma' + idx]
-                beta = self.params['beta' + idx]
-                bn_param = self.params[idx_layer]
-
-                scores, cache = self.affine_batchnorm_forward(
-                    scores, w, b, gamma, beta, bn_param)
-            else:
+            # If last layer
+            if idx_layer + 1 == self.num_layers:
                 scores, cache = affine_forward(scores, w, b)
+
+            else:
+                if self.use_batchnorm:
+                    gamma = self.params['gamma' + idx]
+                    beta = self.params['beta' + idx]
+                    bn_param = self.bn_params[idx_layer]
+
+                    scores, cache = self.affine_batchnorm_forward(
+                        scores, w, b, gamma, beta, bn_param)
+
+                else:
+                    scores, cache = affine_relu_forward(scores, w, b)
 
             cache_list.append(cache)
 
@@ -416,13 +423,22 @@ class FullyConnectedNet(object):
         for idx_layer in reversed(range(self.num_layers)):
 
             idx = str(idx_layer + 1)
+            cache = cache_list[idx_layer]
             w = params['W' + idx]
 
-            if self.use_batchnorm:
-                dx, dw, db, dgamma, dbeta = self.affine_batchnorm_backward(
-                    dout, cache)
+            # If last layer
+            if idx_layer + 1 == self.num_layers:
+                dx, dw, db = affine_backward(dx, cache)
+
             else:
-                dx, dw, db = affine_backward(dx, cache_list[idx_layer])
+                if self.use_batchnorm:
+                    dx, dw, db, dgamma, dbeta = self.affine_batchnorm_backward(
+                        dx, cache)
+                    grads['gamma' + idx] = dgamma
+                    grads['beta' + idx] = dbeta
+                else:
+                    dx, dw, db = affine_relu_backward(dx, cache)
+
             grads['W' + idx] = dw + reg * w
             grads['b' + idx] = db
 
