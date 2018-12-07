@@ -321,6 +321,18 @@ class FullyConnectedNet(object):
         dx, dw, db = affine_backward(dc, fc_cache)
         return dx, dw, db, np.sum(dgamma), np.sum(dbeta)
 
+    def affine_relu_drop_forward(self, x, w, b, dropout_param):
+        a, ar_cache = affine_relu_forward(x, w, b)
+        out, drop_cache = dropout_forward(a, dropout_param)
+        cache = (ar_cache, drop_cache)
+        return out, cache
+
+    def affine_relu_drop_backward(self, dout, cache):
+        ar_cache, drop_cache = cache
+        da = dropout_backward(dout, drop_cache)
+        dx, dw, db = affine_relu_backward(da, ar_cache)
+        return dx, dw, db
+
     # Self defined functions============================================
 
     def loss(self, X, y=None):
@@ -365,18 +377,23 @@ class FullyConnectedNet(object):
             w = params['W' + idx]
             b = params['b' + idx]
 
-            # If last layer
+            # Last layer
             if idx_layer + 1 == self.num_layers:
                 scores, cache = affine_forward(scores, w, b)
 
+            # Other layers
             else:
                 if self.use_batchnorm:
-                    gamma = self.params['gamma' + idx]
-                    beta = self.params['beta' + idx]
+                    gamma = params['gamma' + idx]
+                    beta = params['beta' + idx]
                     bn_param = self.bn_params[idx_layer]
 
                     scores, cache = self.affine_batchnorm_forward(
                         scores, w, b, gamma, beta, bn_param)
+
+                elif self.use_dropout:
+                    scores, cache = self.affine_relu_drop_forward(
+                        scores, w, b, self.dropout_param)
 
                 else:
                     scores, cache = affine_relu_forward(scores, w, b)
@@ -423,19 +440,24 @@ class FullyConnectedNet(object):
         for idx_layer in reversed(range(self.num_layers)):
 
             idx = str(idx_layer + 1)
-            cache = cache_list[idx_layer]
             w = params['W' + idx]
+            cache = cache_list[idx_layer]
 
-            # If last layer
+            # Last layer
             if idx_layer + 1 == self.num_layers:
                 dx, dw, db = affine_backward(dx, cache)
 
+            # Other layers
             else:
                 if self.use_batchnorm:
                     dx, dw, db, dgamma, dbeta = self.affine_batchnorm_backward(
                         dx, cache)
                     grads['gamma' + idx] = dgamma
                     grads['beta' + idx] = dbeta
+
+                elif self.use_dropout:
+                    dx, dw, db = self.affine_relu_drop_backward(dx, cache)
+
                 else:
                     dx, dw, db = affine_relu_backward(dx, cache)
 
