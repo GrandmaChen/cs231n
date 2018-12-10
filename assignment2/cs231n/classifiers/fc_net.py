@@ -306,7 +306,7 @@ class FullyConnectedNet(object):
         for k, v in self.params.items():
             self.params[k] = v.astype(dtype)
 
-    # Self defined functions============================================
+    # Self defined functions==============================================
     def affine_batchnorm_forward(self, x, w, b, gamma, beta, bn_param):
         a, fc_cache = affine_forward(x, w, b)
         c, batch_cache = batchnorm_forward(a, gamma, beta, bn_param)
@@ -333,7 +333,7 @@ class FullyConnectedNet(object):
         dx, dw, db = affine_relu_backward(da, ar_cache)
         return dx, dw, db
 
-    # Self defined functions============================================
+    # Self defined functions==============================================
 
     def loss(self, X, y=None):
         """
