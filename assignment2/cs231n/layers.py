@@ -425,8 +425,8 @@ def conv_forward_naive(x, w, b, conv_param):
     x_pad = np.pad(x, ((0,), (0,), (pad,), (pad,)),
                    'constant', constant_values=0)
 
-    H_dash = 1 + (H + 2 * pad - HH) // stride
-    W_dash = 1 + (W + 2 * pad - WW) // stride
+    H_dash = (H + 2 * pad - HH) // stride + 1
+    W_dash = (W + 2 * pad - WW) // stride + 1
 
     # Construct empty output
     out = np.zeros((N, F, H_dash, W_dash))
@@ -484,8 +484,8 @@ def conv_backward_naive(dout, cache):
 
     dx_pad = np.zeros(x_pad.shape)
 
-    H_dash = 1 + (H + 2 * pad - HH) // stride
-    W_dash = 1 + (W + 2 * pad - WW) // stride
+    H_dash = (H + 2 * pad - HH) // stride + 1
+    W_dash = (W + 2 * pad - WW) // stride + 1
 
     for ni in range(N):
         for fi in range(F):
@@ -537,8 +537,8 @@ def max_pool_forward_naive(x, pool_param):
     pool_width = pool_param['pool_width']
     stride = pool_param['stride']
 
-    H_dash = 1 + (H - pool_height) // stride
-    W_dash = 1 + (W - pool_width) // stride
+    H_dash = (H - pool_height) // stride + 1
+    W_dash = (W - pool_width) // stride + 1
 
     out = np.zeros((N, C, H_dash, W_dash))
 
@@ -579,8 +579,8 @@ def max_pool_backward_naive(dout, cache):
 
     pool_height, pool_width, stride = pool_param['pool_height'], pool_param['pool_width'], pool_param['stride']
 
-    H_dash = 1 + (H - pool_height) // stride
-    W_dash = 1 + (W - pool_width) // stride
+    H_dash = (H - pool_height) // stride + 1
+    W_dash = (W - pool_width) // stride + 1
 
     dx = np.zeros(x.shape)
 
