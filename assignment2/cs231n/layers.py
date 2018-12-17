@@ -60,13 +60,13 @@ def affine_backward(dout, cache):
 
     X = x.reshape(x.shape[0], -1)
 
-    # Just remember those formulas
+    # Just remember those
     dX = dout.dot(w.T)
     dx = dX.reshape(x.shape)
 
     dw = X.T.dot(dout)
 
-    db = np.sum(dout.T, axis=1)
+    db = dout.sum(axis=0)
 
     ###########################################################################
     #                             END OF YOUR CODE                            #
