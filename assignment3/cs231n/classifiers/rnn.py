@@ -136,7 +136,47 @@ class CaptioningRNN(object):
         # defined above to store loss and gradients; grads[k] should give the      #
         # gradients for self.params[k].                                            #
         ############################################################################
-        pass
+
+        # https://zhuanlan.zhihu.com/p/31501335
+
+        # (1) Get image scores as h0
+        h0, cache_h0 = affine_forward(features, W_proj, b_proj)
+
+        # (2) Transform the words into vectors
+        x, cache_x = word_embedding_forward(captions_in, W_embed)
+
+        # (3) Choose cell type
+        if self.cell_type == 'rnn':
+            h, cache_rnn = rnn_forward(x, h0, Wx, Wh, b)
+        elif self.cell_type == 'lstm':
+            h, cache_rnn = lstm_forward(x, h0, Wx, Wh, b)
+
+        # (4) 
+        # temporal_affine
+        h_affine, cache_h_affine = temporal_affine_forward(h, W_vocab, b_vocab)
+        
+        # (5)
+        # softmax
+        loss, dx = temporal_softmax_loss(h_affine, captions_out, mask)
+
+        # (5)
+        # backward
+        # temporal_affine bp
+        dx, grads['W_vocab'], grads['b_vocab'] = temporal_affine_backward(
+            dx, cache_h_affine)
+        # rnn bp
+        if self.cell_type == 'rnn':
+            dx, dh, grads['Wx'], grads['Wh'], grads['b'] = rnn_backward(
+                dx, cache_rnn)
+        elif self.cell_type == 'lstm':
+            dx, dh, grads['Wx'], grads['Wh'], grads['b'] = lstm_backward(
+                dx, cache_rnn)
+        # word embed bp
+        grads['W_embed'] = word_embedding_backward(dx, cache_x)
+        # affine bp
+        dx, grads['W_proj'], grads['b_proj'] = affine_backward(
+            dh, cache_h0)
+
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -197,6 +237,7 @@ class CaptioningRNN(object):
         # functions; you'll need to call rnn_step_forward or lstm_step_forward in #
         # a loop.                                                                 #
         ###########################################################################
+
         pass
         ############################################################################
         #                             END OF YOUR CODE                             #

@@ -215,9 +215,25 @@ def word_embedding_forward(x, W):
     #                                                                            #
     # HINT: This can be done in one line using NumPy's array indexing.           #
     ##############################################################################
-    # Don't understand
-    out = W[x]
+
+    # https://www.zhihu.com/question/32275069
+
+    N, T = x.shape
+    V, D = W.shape
+    out = np.zeros((N, T, D))
+
+    for n in range(N):
+        for t in range(T):
+
+            # idx : a word's index
+            idx = x[n, t]
+
+            # Get the vector for that idx
+            out[n, t] = W[idx]
+            print(W[idx])
+
     cache = (x, W)
+
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
@@ -246,9 +262,13 @@ def word_embedding_backward(dout, cache):
     # Note that Words can appear more than once in a sequence.                   #
     # HINT: Look up the function np.add.at                                       #
     ##############################################################################
+
     x, W = cache
     dW = np.zeros(W.shape)
+
+    # https://docs.scipy.org/doc/numpy/reference/generated/numpy.ufunc.at.html
     np.add.at(dW, x, dout)
+
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
@@ -326,7 +346,8 @@ def lstm_step_backward(dnext_h, dnext_c, cache):
     # HINT: For sigmoid and tanh you can compute local derivatives in terms of  #
     # the output value from the nonlinearity.                                   #
     #############################################################################
-    pass
+    dprev_h = 0
+    dprev_c = 0
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
