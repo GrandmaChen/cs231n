@@ -114,7 +114,7 @@ class CaptioningRNN(object):
         # Weight and bias for the hidden-to-vocab transformation.
         W_vocab, b_vocab = self.params['W_vocab'], self.params['b_vocab']
 
-        loss, grads = 0.0, {}
+        scores, grads = 0.0, {}
         ############################################################################
         # TODO: Implement the forward and backward passes for the CaptioningRNN.   #
         # In the forward pass you will need to do the following:                   #
@@ -137,51 +137,46 @@ class CaptioningRNN(object):
         # gradients for self.params[k].                                            #
         ############################################################################
 
-        # https://zhuanlan.zhihu.com/p/31501335
+        # https://zhuanlan.zhihu.com/p/31501335 1.2.2
 
+        # Get functions for the cell
+        forward = {'rnn': rnn_forward, 'lstm': lstm_forward}[self.cell_type]
+        backward = {'rnn': rnn_backward, 'lstm': lstm_backward}[self.cell_type]
+
+        # Forward
         # (1) Get image scores as h0
         h0, cache_h0 = affine_forward(features, W_proj, b_proj)
 
-        # (2) Transform the words into vectors
+        # (2) Transform the word indices into vectors
         x, cache_x = word_embedding_forward(captions_in, W_embed)
 
-        # (3) Choose cell type
-        if self.cell_type == 'rnn':
-            h, cache_rnn = rnn_forward(x, h0, Wx, Wh, b)
-        elif self.cell_type == 'lstm':
-            h, cache_rnn = lstm_forward(x, h0, Wx, Wh, b)
+        # (3) Compute the last h
+        h_t, cache_forward = forward(x, h0, Wx, Wh, b)
 
-        # (4) 
-        # temporal_affine
-        h_affine, cache_h_affine = temporal_affine_forward(h, W_vocab, b_vocab)
-        
-        # (5)
-        # softmax
-        loss, dx = temporal_softmax_loss(h_affine, captions_out, mask)
+        # (4) Get the last y value using the last h
+        y_t, cache_y_t = temporal_affine_forward(h_t, W_vocab, b_vocab)
 
-        # (5)
-        # backward
-        # temporal_affine bp
-        dx, grads['W_vocab'], grads['b_vocab'] = temporal_affine_backward(
-            dx, cache_h_affine)
-        # rnn bp
-        if self.cell_type == 'rnn':
-            dx, dh, grads['Wx'], grads['Wh'], grads['b'] = rnn_backward(
-                dx, cache_rnn)
-        elif self.cell_type == 'lstm':
-            dx, dh, grads['Wx'], grads['Wh'], grads['b'] = lstm_backward(
-                dx, cache_rnn)
-        # word embed bp
+        # (5) Get scores using y value
+        scores, dx = temporal_softmax_loss(y_t, captions_out, mask)
+
+        # Backward
+        # (4) Backprop from y_t to h_t
+        dx, grads['W_vocab'], grads['b_vocab'] = temporal_affine_backward(dx, cache_y_t)
+
+        # (3) Backprop from h_t to the start cell
+        dx, dh0, grads['Wx'], grads['Wh'], grads['b'] = backward(dx, cache_forward)
+
+        # (2) Break gradients of vectors into word indices
         grads['W_embed'] = word_embedding_backward(dx, cache_x)
-        # affine bp
-        dx, grads['W_proj'], grads['b_proj'] = affine_backward(
-            dh, cache_h0)
+
+        # (1) Image backprop
+        dx, grads['W_proj'], grads['b_proj'] = affine_backward(dh0, cache_h0)
 
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
 
-        return loss, grads
+        return scores, grads
 
     def sample(self, features, max_length=30):
         """
@@ -238,7 +233,36 @@ class CaptioningRNN(object):
         # a loop.                                                                 #
         ###########################################################################
 
-        pass
+        # Get image scores as h0
+        h0, cache_h0 = affine_forward(features, W_proj, b_proj)
+        prev_h = h0
+
+        # Expand the first word to N dimensions and set it as x1
+        x1 = np.array([self._start] * N)
+        prev_x = x1
+
+        # Put _start at the head of captions
+        captions[:, 0] = self._start
+
+        for t in range(1, max_length):
+
+            # (1) Get current x using previous xs
+            curr_x, cache_curr_x = word_embedding_forward(prev_x, W_embed)
+
+            # (2) Get current x using current x and previous h
+            curr_h, cache_curr_h = rnn_step_forward(curr_x, prev_h, Wx, Wh, b)
+
+            # (3) Get current y using current h
+            curr_y, cache_curr_y = affine_forward(curr_h, W_vocab, b_vocab)
+
+            # (4) Select the word with the highest score as the next word & write it into the captions
+            curr_x = np.argmax(curr_y, axis=1)
+            captions[:, t] = curr_x
+
+            # Go to the next step
+            prev_x = curr_x
+            prev_h = curr_h
+
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################

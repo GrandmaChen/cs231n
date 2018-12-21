@@ -177,8 +177,7 @@ def rnn_backward(dh, cache):
         # Current dh needs to add up all later dhs according to BPTT,
         # therefore dcurr_h + dprev_h
         # PS : First dprev_h here is ht-2 and second one is ht-1
-        dxt, dprev_h, dWxt, dWht, dbt = rnn_step_backward(
-            dcurr_h + dprev_h, cache[t])
+        dxt, dprev_h, dWxt, dWht, dbt = rnn_step_backward(dcurr_h + dprev_h, cache[t])
 
         dx[:, t] = dxt
 
@@ -216,22 +215,23 @@ def word_embedding_forward(x, W):
     # HINT: This can be done in one line using NumPy's array indexing.           #
     ##############################################################################
 
+    # N, T = x.shape
+    # V, D = W.shape
+    # out = np.zeros((N, T, D))
+
+    # for n in range(N):
+    #     for t in range(T):
+
+    #         # idx : a word's index
+    #         idx = x[n, t]
+
+    #         # Get the vector for that idx
+    #         out[n, t] = W[idx]
+
     # https://www.zhihu.com/question/32275069
+    # http://zhouyichu.com/words/Word-Embedding-Dimension/
 
-    N, T = x.shape
-    V, D = W.shape
-    out = np.zeros((N, T, D))
-
-    for n in range(N):
-        for t in range(T):
-
-            # idx : a word's index
-            idx = x[n, t]
-
-            # Get the vector for that idx
-            out[n, t] = W[idx]
-            print(W[idx])
-
+    out = W[x]
     cache = (x, W)
 
     ##############################################################################
