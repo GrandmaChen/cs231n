@@ -244,24 +244,51 @@ class CaptioningRNN(object):
         # Put _start at the head of captions
         captions[:, 0] = self._start
 
-        for t in range(1, max_length):
+        # Vanilla RNN
+        if self.cell_type == 'rnn':
+            for t in range(max_length):
 
-            # (1) Get current x using previous xs
-            curr_x, cache_curr_x = word_embedding_forward(prev_x, W_embed)
+                # (1) Get current x using previous xs
+                curr_x, cache_curr_x = word_embedding_forward(prev_x, W_embed)
 
-            # (2) Get current x using current x and previous h
-            curr_h, cache_curr_h = rnn_step_forward(curr_x, prev_h, Wx, Wh, b)
+                # (2) Get current h using current x and previous h
+                curr_h, cache_curr_h = rnn_step_forward(curr_x, prev_h, Wx, Wh, b)
 
-            # (3) Get current y using current h
-            curr_y, cache_curr_y = affine_forward(curr_h, W_vocab, b_vocab)
+                # (3) Get current y using current h
+                curr_y, cache_curr_y = affine_forward(curr_h, W_vocab, b_vocab)
 
-            # (4) Select the word with the highest score as the next word & write it into the captions
-            curr_x = np.argmax(curr_y, axis=1)
-            captions[:, t] = curr_x
+                # (4) Select the word with the highest score as the next word & write it into the captions
+                curr_x = curr_y.argmax(axis=1)
+                captions[:, t] = curr_x
 
-            # Go to the next step
-            prev_x = curr_x
-            prev_h = curr_h
+                # Go to the next step
+                prev_x = curr_x
+                prev_h = curr_h
+
+        # LSTM
+        elif self.cell_type == 'lstm':
+
+            prev_c = np.zeros_like(prev_h)
+
+            for t in range(max_length):
+
+                # (1) Get current x using previous xs
+                curr_x, cache_curr_x = word_embedding_forward(prev_x, W_embed)
+
+                # (2) Get current h & c using current x and previous h
+                curr_h, curr_c, cache_curr_h = lstm_step_forward(curr_x, prev_h, prev_c, Wx, Wh, b)
+
+                # (3) Get current y using current h
+                curr_y, cache_curr_y = affine_forward(curr_h, W_vocab, b_vocab)
+
+                # (4) Select the word with the highest score as the next word & write it into the captions
+                curr_x = curr_y.argmax(axis=1)
+                captions[:, t] = curr_x
+
+                # Go to the next step
+                prev_x = curr_x
+                prev_h = curr_h
+                prev_c = curr_c
 
         ############################################################################
         #                             END OF YOUR CODE                             #
